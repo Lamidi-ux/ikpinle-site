@@ -1,2 +1,2 @@
 DATABASE_URL=postgresql://postgres.hwmvmqjflcurljlzomnd:7-SVBhGW?VsXvG7@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
-JWT_SECRET=change-moi-avec-une-longue-chaine-aleatoire
+JWT_SECRET=6e48ce39cf020ef8435ee1c711246aa879530ydfc2f8def747bef53043f37ab5
