@@ -14,7 +14,12 @@ function useApi() {
         ...(options.headers || {}),
       },
     });
-    const donnees = await reponse.json();
+    let donnees;
+    try {
+      donnees = await reponse.json();
+    } catch {
+      throw new Error(`Réponse invalide du serveur (statut ${reponse.status}).`);
+    }
     if (!reponse.ok) throw new Error(donnees.erreur || "Erreur serveur");
     return donnees;
   };
@@ -33,7 +38,7 @@ function SectionProducteurs() {
     setChargement(true);
     try {
       const donnees = await appeler("/api/producteurs");
-      setProducteurs(donnees.producteurs);
+      setProducteurs(Array.isArray(donnees.producteurs) ? donnees.producteurs : []);
     } catch (e) {
       setErreur(e.message);
     } finally {
