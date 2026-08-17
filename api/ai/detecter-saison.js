@@ -23,7 +23,6 @@ function detecterDebutSaison(observationsTriees, anneeRecherche) {
     const cumul = fenetre.reduce((s, d) => s + (d.pluie_mm || 0), 0);
 
     if (cumul >= SEUIL_CUMUL_MM) {
-      // Candidat trouvé : vérifier l'absence de séquence sèche prolongée après
       const fenetreConfirmation = donnees.slice(i, Math.min(i + JOURS_CONFIRMATION, donnees.length));
       let joursSecsConsecutifs = 0;
       let fauxDepart = false;
@@ -43,27 +42,26 @@ function detecterDebutSaison(observationsTriees, anneeRecherche) {
       if (!fauxDepart) {
         return donnees[i].date;
       }
-      // Sinon : faux départ, la boucle continue pour chercher le prochain candidat
     }
   }
   return null;
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ erreur: "Méthode non autorisée." });
-  }
-
-  const utilisateur = exigerAuthentification(req, res);
-  if (!utilisateur) return;
-
-  const { commune, culture, annee } = req.body || {};
-  if (!commune || !culture) {
-    return res.status(400).json({ erreur: "commune et culture sont requis." });
-  }
-  const anneeRecherche = annee || new Date().getFullYear();
-
   try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ erreur: "Méthode non autorisée." });
+    }
+
+    const utilisateur = exigerAuthentification(req, res);
+    if (!utilisateur) return;
+
+    const { commune, culture, annee } = req.body || {};
+    if (!commune || !culture) {
+      return res.status(400).json({ erreur: "commune et culture sont requis." });
+    }
+    const anneeRecherche = annee || new Date().getFullYear();
+
     const meteo = await query(
       "select date, pluie_mm from meteo_historique where commune = $1 order by date",
       [commune]
@@ -96,6 +94,9 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("Erreur detecter-saison:", err);
-    return res.status(500).json({ erreur: "Erreur serveur lors de la détection." });
+    return res.status(500).json({
+      erreur: "Erreur serveur lors de la détection.",
+      diagnostic: String(err && err.message ? err.message : err),
+    });
   }
 }
