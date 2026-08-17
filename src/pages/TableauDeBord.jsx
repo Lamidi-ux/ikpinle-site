@@ -32,11 +32,17 @@ function useApi() {
       },
     });
 
+    const texteBrut = await reponse.text();
     let donnees;
     try {
-      donnees = await reponse.json();
+      donnees = texteBrut ? JSON.parse(texteBrut) : {};
     } catch {
-      throw new Error(`Réponse invalide du serveur (statut ${reponse.status}).`);
+      // Diagnostic complet affiché à l'écran — aucun outil externe nécessaire
+      throw new Error(
+        `[DIAGNOSTIC] URL appelée : ${url} | Méthode : ${options.method || "GET"} | ` +
+        `Statut : ${reponse.status} | Content-Type : ${reponse.headers.get("content-type")} | ` +
+        `Corps brut (200 premiers caractères) : ${JSON.stringify(texteBrut.slice(0, 200))}`
+      );
     }
 
     if (!reponse.ok) {
