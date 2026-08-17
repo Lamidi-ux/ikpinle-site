@@ -270,7 +270,7 @@ function SectionDetectionIA() {
     setErreur("");
     setResultat(null);
     try {
-      await appeler("/api/ia/detecter-saison", {
+      await appeler("/api/ia/detectersaison", {
         method: "POST",
         body: JSON.stringify({ commune: communeNettoyee, culture }),
       });
