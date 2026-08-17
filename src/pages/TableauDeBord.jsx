@@ -13,12 +13,6 @@ const FORM_PRODUCTEUR_VIDE = {
   whatsapp: false,
 };
 
-/**
- * Petit client HTTP partagé par toutes les sections du tableau de bord.
- * Centralise l'ajout du token, le parsing JSON défensif (pour ne jamais
- * planter le rendu si le serveur renvoie autre chose que du JSON), et la
- * normalisation des erreurs.
- */
 function useApi() {
   const { token } = useAuth();
 
@@ -37,7 +31,6 @@ function useApi() {
     try {
       donnees = texteBrut ? JSON.parse(texteBrut) : {};
     } catch {
-      // Diagnostic complet affiché à l'écran — aucun outil externe nécessaire
       throw new Error(
         `[DIAGNOSTIC] URL appelée : ${url} | Méthode : ${options.method || "GET"} | ` +
         `Statut : ${reponse.status} | Content-Type : ${reponse.headers.get("content-type")} | ` +
@@ -54,14 +47,9 @@ function useApi() {
   return { appeler };
 }
 
-/** Nettoie une chaîne (espaces en trop) sans jamais planter sur une valeur non-string. */
 function nettoyer(valeur) {
   return typeof valeur === "string" ? valeur.trim() : valeur;
 }
-
-// ==============================================================
-// Section — Producteurs
-// ==============================================================
 
 function SectionProducteurs() {
   const { appeler } = useApi();
@@ -246,10 +234,6 @@ function SectionProducteurs() {
   );
 }
 
-// ==============================================================
-// Section — Détection IA
-// ==============================================================
-
 function SectionDetectionIA() {
   const { appeler } = useApi();
   const [commune, setCommune] = useState("");
@@ -270,12 +254,12 @@ function SectionDetectionIA() {
     setErreur("");
     setResultat(null);
     try {
-      await appeler("/api/ia/detectersaison", {
+      await appeler("/api/detectersaison", {
         method: "POST",
         body: JSON.stringify({ commune: communeNettoyee, culture }),
       });
       const recommandation = await appeler(
-        `/api/ia/recommandation?commune=${encodeURIComponent(communeNettoyee)}&culture=${culture}`
+        `/api/recommandation?commune=${encodeURIComponent(communeNettoyee)}&culture=${culture}`
       );
       setResultat(recommandation);
     } catch (e) {
@@ -334,10 +318,6 @@ function SectionDetectionIA() {
   );
 }
 
-// ==============================================================
-// Section — Assistant agronomique (chatbot)
-// ==============================================================
-
 function SectionChatbot() {
   const { appeler } = useApi();
   const [question, setQuestion] = useState("");
@@ -352,7 +332,7 @@ function SectionChatbot() {
     setEnvoi(true);
     setQuestion("");
     try {
-      const donnees = await appeler("/api/ia/chatbot", {
+      const donnees = await appeler("/api/chatbot", {
         method: "POST",
         body: JSON.stringify({ question: q }),
       });
@@ -398,10 +378,6 @@ function SectionChatbot() {
     </div>
   );
 }
-
-// ==============================================================
-// Page
-// ==============================================================
 
 export default function TableauDeBord() {
   const { utilisateur } = useAuth();
