@@ -1,1 +1,44 @@
-
+{
+  "mais": {
+    "cycle": 90,
+    "besoin_eau_mm": 500,
+    "semis": "avril à juin",
+    "rendement_optimal": "2.5 à 3.5 t/ha",
+    "conseils": "Semer en lignes espacées de 80 cm, fertiliser avec NPK 15-15-15 à 200 kg/ha, désherber au 20e jour."
+  },
+  "niebe": {
+    "cycle": 70,
+    "besoin_eau_mm": 350,
+    "semis": "mai à juillet",
+    "rendement_optimal": "1.2 à 1.8 t/ha",
+    "conseils": "Fixation naturelle d'azote, éviter l'excès d'eau, récolter quand les gousses sont sèches."
+  },
+  "arachide": {
+    "cycle": 110,
+    "besoin_eau_mm": 400,
+    "semis": "mai à juin",
+    "rendement_optimal": "1.5 à 2.0 t/ha",
+    "conseils": "Sol bien drainé, apport en phosphore important, buttage avant floraison."
+  },
+  "sorgho": {
+    "cycle": 120,
+    "besoin_eau_mm": 450,
+    "semis": "juin à juillet",
+    "rendement_optimal": "2.0 à 3.0 t/ha",
+    "conseils": "Résistant à la sécheresse, semis en poquets, éclaircir à 2 plants par poquet."
+  },
+  "sesame": {
+    "cycle": 100,
+    "besoin_eau_mm": 380,
+    "semis": "juin à août",
+    "rendement_optimal": "0.8 à 1.2 t/ha",
+    "conseils": "Semis superficiel (1-2 cm), récolter quand les capsules commencent à s'ouvrir."
+  },
+  "coton": {
+    "cycle": 180,
+    "besoin_eau_mm": 600,
+    "semis": "mai à juin",
+    "rendement_optimal": "2.5 à 3.5 t/ha (coton graine)",
+    "conseils": "Nécessite un suivi phytosanitaire rigoureux, apport en potassium important."
+  }
+}
