@@ -36,6 +36,19 @@ async function rechercherDocuments(question, culture) {
 }
 
 export default async function handler(req, res) {
+  // ========== AJOUT CORS (OBLIGATOIRE) ==========
+  // Permet les requêtes depuis n'importe quelle origine (à restreindre en production)
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Répond immédiatement aux requêtes OPTIONS (pré-vol CORS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  // ========== FIN AJOUT CORS ==========
+
+  // Vérification de la méthode HTTP (doit être POST)
   if (req.method !== "POST") {
     return res.status(405).json({ erreur: "Méthode non autorisée." });
   }
