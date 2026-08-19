@@ -1,6 +1,7 @@
 // api/assistant.js
 //
-// Assistant conversationnel basé sur Groq (modèle Llama 3.1 8B).
+// Assistant conversationnel basé sur Groq (openai/gpt-oss-20b — Llama 3.1 8B
+// a été retiré par Groq le 17 juin 2026, voir console.groq.com/docs/deprecations).
 // Enrichi d'une recherche documentaire ("RAG-lite") et météo.
 //
 // Nécessite la variable d'environnement GROQ_API_KEY sur Vercel.
@@ -103,13 +104,14 @@ Contexte météo (si disponible) : ${meteoContext}
 Réponds à la question de l'agriculteur de manière claire, précise et utile, en t'appuyant sur ces informations. Si la documentation complémentaire ne couvre pas la question, réponds avec tes connaissances générales d'agronomie tropicale, sans l'inventer comme si elle venait de la documentation fournie.`;
 
     // ========== MODÈLE GROQ VALIDE ==========
-    // Modèle : llama-3.1-8b-versatile (disponible gratuitement)
+    // llama-3.1-8b-instant et llama-3.3-70b-versatile ont été retirés par Groq
+    // le 17 juin 2026. Remplacement recommandé par Groq : openai/gpt-oss-20b.
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question },
       ],
-      model: "llama-3.1-8b-versatile",
+      model: "openai/gpt-oss-20b",
       temperature: 0.6,
       max_tokens: 800,
     });
