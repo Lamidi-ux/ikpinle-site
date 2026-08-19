@@ -1,11 +1,7 @@
 // api/assistant.js
 //
-// Assistant conversationnel basé sur un vrai modèle de langage (Groq/Llama).
-// Enrichi d'une recherche documentaire légère ("RAG-lite") : avant de
-// répondre, on cherche dans la table `documents` (recherche plein texte
-// PostgreSQL native, sans base vectorielle ni service externe) les passages
-// les plus pertinents par rapport à la question posée, et on les fournit
-// en contexte au modèle en plus de la fiche culture de base.
+// Assistant conversationnel basé sur Groq (modèle Llama 3.1 8B).
+// Enrichi d'une recherche documentaire ("RAG-lite") et météo.
 //
 // Nécessite la variable d'environnement GROQ_API_KEY sur Vercel.
 
@@ -106,13 +102,14 @@ Contexte météo (si disponible) : ${meteoContext}
 
 Réponds à la question de l'agriculteur de manière claire, précise et utile, en t'appuyant sur ces informations. Si la documentation complémentaire ne couvre pas la question, réponds avec tes connaissances générales d'agronomie tropicale, sans l'inventer comme si elle venait de la documentation fournie.`;
 
-    // ========== MODÈLE GROQ VALIDE ET DISPONIBLE ==========
+    // ========== MODÈLE GROQ VALIDE ==========
+    // Modèle : llama-3.1-8b-versatile (disponible gratuitement)
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question },
       ],
-      model: "mixtral-8x7b-32768",   // ← Modèle fiable, gratuit et largement disponible
+      model: "llama-3.1-8b-versatile",
       temperature: 0.6,
       max_tokens: 800,
     });
@@ -125,15 +122,17 @@ Réponds à la question de l'agriculteur de manière claire, précise et utile, 
     });
   } catch (err) {
     console.error("Erreur assistant:", err);
-    
-    // Message d'erreur plus explicite pour l'utilisateur
+
+    // Messages d'erreur explicites pour l'utilisateur
     let messageErreur = "Une erreur interne est survenue.";
-    if (err.status === 404 && err.error?.error?.code === "model_not_found") {
-      messageErreur = "Le modèle IA n'est pas disponible. Veuillez contacter l'administrateur.";
+    if (err.status === 400 && err.error?.error?.code === "model_decommissioned") {
+      messageErreur = "Le modèle IA a été retiré. Veuillez contacter l'administrateur.";
+    } else if (err.status === 404 && err.error?.error?.code === "model_not_found") {
+      messageErreur = "Le modèle IA n'est pas accessible. Vérifiez votre clé API Groq.";
     } else if (err.status === 401) {
       messageErreur = "Clé API Groq invalide ou manquante.";
     }
-    
+
     return res.status(500).json({ erreur: messageErreur });
   }
 }
