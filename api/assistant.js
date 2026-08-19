@@ -109,12 +109,15 @@ Contexte météo (si disponible) : ${meteoContext}
 
 Réponds à la question de l'agriculteur de manière claire, précise et utile, en t'appuyant sur ces informations. Si la documentation complémentaire ne couvre pas la question, réponds avec tes connaissances générales d'agronomie tropicale, sans l'inventer comme si elle venait de la documentation fournie.`;
 
+    // ========== MODÈLE MIS À JOUR ==========
+    // Ancien modèle : "llama3-8b-8192" (décommissionné)
+    // Nouveau modèle supporté :
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question },
       ],
-      model: "llama3-8b-8192",
+      model: "llama-3.3-70b-versatile",   // ← MODÈLE VALIDE ET RECOMMANDÉ
       temperature: 0.6,
       max_tokens: 800,
     });
