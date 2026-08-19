@@ -36,19 +36,16 @@ async function rechercherDocuments(question, culture) {
 }
 
 export default async function handler(req, res) {
-  // ========== AJOUT CORS (OBLIGATOIRE) ==========
-  // Permet les requêtes depuis n'importe quelle origine (à restreindre en production)
+  // ========== GESTION CORS ==========
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Répond immédiatement aux requêtes OPTIONS (pré-vol CORS)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
-  // ========== FIN AJOUT CORS ==========
+  // =================================
 
-  // Vérification de la méthode HTTP (doit être POST)
   if (req.method !== "POST") {
     return res.status(405).json({ erreur: "Méthode non autorisée." });
   }
@@ -109,15 +106,13 @@ Contexte météo (si disponible) : ${meteoContext}
 
 Réponds à la question de l'agriculteur de manière claire, précise et utile, en t'appuyant sur ces informations. Si la documentation complémentaire ne couvre pas la question, réponds avec tes connaissances générales d'agronomie tropicale, sans l'inventer comme si elle venait de la documentation fournie.`;
 
-    // ========== MODÈLE MIS À JOUR ==========
-    // Ancien modèle : "llama3-8b-8192" (décommissionné)
-    // Nouveau modèle supporté :
+    // ========== MODÈLE GROQ VALIDE ET DISPONIBLE ==========
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: question },
       ],
-      model: "llama-3.3-70b-versatile",   // ← MODÈLE VALIDE ET RECOMMANDÉ
+      model: "mixtral-8x7b-32768",   // ← Modèle fiable, gratuit et largement disponible
       temperature: 0.6,
       max_tokens: 800,
     });
@@ -130,6 +125,15 @@ Réponds à la question de l'agriculteur de manière claire, précise et utile, 
     });
   } catch (err) {
     console.error("Erreur assistant:", err);
-    return res.status(500).json({ erreur: "Une erreur interne est survenue." });
+    
+    // Message d'erreur plus explicite pour l'utilisateur
+    let messageErreur = "Une erreur interne est survenue.";
+    if (err.status === 404 && err.error?.error?.code === "model_not_found") {
+      messageErreur = "Le modèle IA n'est pas disponible. Veuillez contacter l'administrateur.";
+    } else if (err.status === 401) {
+      messageErreur = "Clé API Groq invalide ou manquante.";
+    }
+    
+    return res.status(500).json({ erreur: messageErreur });
   }
 }
