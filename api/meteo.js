@@ -121,7 +121,7 @@ async function gererMeteoEnDirect(req, res) {
 
 async function importerDonneesNASA(commune, annee) {
   const coords = COMMUNES[commune];
-  const url = `https://power.larc.nasa.gov/api/power/point?parameters=PRECTOTCORR&start=${annee}0101&end=${annee}1231&latitude=${coords.lat}&longitude=${coords.lon}&format=JSON`;
+  const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR&community=AG&start=${annee}0101&end=${annee}1231&latitude=${coords.lat}&longitude=${coords.lon}&format=JSON`;
 
   const reponse = await fetch(url);
   if (!reponse.ok) {
