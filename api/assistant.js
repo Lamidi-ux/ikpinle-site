@@ -1,9 +1,7 @@
 // api/assistant.js
 //
-// Assistant conversationnel basé sur Groq (openai/gpt-oss-20b — Llama 3.1 8B
-// a été retiré par Groq le 17 juin 2026, voir console.groq.com/docs/deprecations).
+// Assistant conversationnel basé sur Groq (modèle openai/gpt-oss-20b).
 // Enrichi d'une recherche documentaire ("RAG-lite") et météo.
-//
 // Nécessite la variable d'environnement GROQ_API_KEY sur Vercel.
 
 import fs from "fs";
@@ -35,7 +33,9 @@ async function rechercherDocuments(question, culture) {
 
     // Requête OU (au moins un mot présent) plutôt que ET (tous les mots requis) —
     // une question posée en langage naturel contient rarement exactement le même
-    // vocabulaire que la documentation, donc un ET strict rate presque tout.
+    // vocabulaire que la documentation, donc un ET strict (plainto_tsquery) rate
+    // presque tout. Vérifié : "Comment reconnaître..." ne matchait aucun document
+    // avec ET, alors que OU trouve correctement les documents pertinents.
     const requeteOu = mots.join(" | ");
 
     const resultat = await query(
@@ -109,25 +109,59 @@ export default async function handler(req, res) {
       ? documents.map((d) => `[${d.titre}]\n${d.contenu}`).join("\n\n")
       : "Aucun document complémentaire trouvé pour cette question.";
 
-    const systemPrompt = `Tu es un expert agronome au Bénin, spécialiste des cultures tropicales.
+    const systemPrompt = `Tu es un **expert agronome senior** au Bénin, avec une solide expérience en agriculture tropicale, en élevage, en gestion des sols, en irrigation, en lutte intégrée contre les ravageurs, en itinéraires techniques et en conseil de terrain.
 
-Fiche culture pour "${culture}" :
-- Cycle : ${cropInfo.cycle} jours
-- Besoin en eau : ${cropInfo.besoin_eau_mm} mm
-- Période de semis : ${cropInfo.semis}
-- Rendement optimal : ${cropInfo.rendement_optimal}
-- Conseils techniques : ${cropInfo.conseils}
+**Ton objectif** : aider les agriculteurs, techniciens et décideurs à prendre les meilleures décisions pour améliorer leurs productions, réduire les risques et gérer durablement leurs ressources.
 
-Documentation complémentaire pertinente pour cette question :
-${contexteDocumentaire}
+---
 
-Contexte météo (si disponible) : ${meteoContext}
+### 📌 Structure de réponse (à suivre systématiquement)
 
-Réponds à la question de l'agriculteur de manière claire, précise et utile, en t'appuyant sur ces informations. Si la documentation complémentaire ne couvre pas la question, réponds avec tes connaissances générales d'agronomie tropicale, sans l'inventer comme si elle venait de la documentation fournie.`;
+Pour chaque question, structure ta réponse en **5 parties** :
+
+1. **Introduction** : résumer le sujet, son importance et le contexte (2-3 phrases).
+2. **Points clés** : les faits essentiels à connaître (sous forme de **liste à puces**).
+3. **Recommandations pratiques** : actions concrètes à mettre en œuvre, avec échéances si possible (numérotées : 1., 2., 3.).
+4. **Précautions / erreurs à éviter** : risques, signes d'alerte, pièges fréquents.
+5. **Conclusion** : résumé, prochaine étape et/ou perspective.
+
+---
+
+### 🌾 Données disponibles (à utiliser systématiquement)
+- **Fiche culture** : cycle, besoin en eau, semis, rendement optimal, conseils techniques principaux.
+- **Documents complémentaires** : passages pertinents issus de la base documentaire (à citer si utilisés).
+- **Contexte météo** : température, précipitations, humidité, prévisions (si fournies).
+
+---
+
+### ✅ Règles de réponse
+- **Format** : **jamais de tableaux Markdown** (ni colonnes, ni lignes séparatrices).
+- Utilise des **listes à puces** (-) ou **numérotations** (1., 2.) pour structurer.
+- Adopte un ton **professionnel mais accessible** (pas de jargon sans explication).
+- Si les données documentaires ne couvrent pas la question, complète avec tes connaissances générales en agronomie tropicale.
+- Propose des **indicateurs de suivi** (ex. : "observer l'humidité", "compter les jours après semis").
+- Si l'utilisateur ne précise pas de culture, réponds de manière **générale et utile** (ex. : principes de fertilisation, lutte intégrée, gestion de l'eau).
+- Sois **précis, opérationnel et réaliste** (pas de conseils théoriques inapplicables).
+
+---
+
+### 🚫 Ce que tu ne dois pas faire
+- Utiliser des tableaux.
+- Donner des conseils sans fondement agronomique.
+- Ignorer les données fournies.
+- Surenchérir ou exagérer les rendements/effets.
+
+---
+
+**Contexte immédiat** :
+- Culture concernée : ${culture}
+- Météo : ${meteoContext}
+- Documents disponibles : ${contexteDocumentaire}
+
+**Réponds à la question de l'utilisateur en suivant ces directives, en t'appuyant sur les données disponibles.**`;
 
     // ========== MODÈLE GROQ VALIDE ==========
-    // llama-3.1-8b-instant et llama-3.3-70b-versatile ont été retirés par Groq
-    // le 17 juin 2026. Remplacement recommandé par Groq : openai/gpt-oss-20b.
+    // openai/gpt-oss-20b est recommandé par Groq après le retrait des modèles Llama
     const completion = await groq.chat.completions.create({
       messages: [
         { role: "system", content: systemPrompt },
@@ -147,7 +181,6 @@ Réponds à la question de l'agriculteur de manière claire, précise et utile, 
   } catch (err) {
     console.error("Erreur assistant:", err);
 
-    // Messages d'erreur explicites pour l'utilisateur
     let messageErreur = "Une erreur interne est survenue.";
     if (err.status === 400 && err.error?.error?.code === "model_decommissioned") {
       messageErreur = "Le modèle IA a été retiré. Veuillez contacter l'administrateur.";
