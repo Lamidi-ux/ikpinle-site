@@ -14,16 +14,38 @@ import { query } from "./_lib/db.js";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Mots à ignorer dans la construction de la requête OU — trop fréquents
+// pour être discriminants (équivalent simplifié des "stopwords" français).
+const MOTS_VIDES = new Set([
+  "le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "à", "au", "aux",
+  "ce", "ces", "cette", "mon", "ma", "mes", "ton", "ta", "tes", "son", "sa", "ses",
+  "comment", "pourquoi", "quand", "que", "qui", "quoi", "est", "sont", "être",
+  "sur", "dans", "pour", "avec", "sans", "je", "tu", "il", "elle", "nous", "vous",
+]);
+
 async function rechercherDocuments(question, culture) {
   try {
+    const mots = question
+      .toLowerCase()
+      .replace(/[^\p{L}\s]/gu, " ") // retire ponctuation, garde les lettres accentuées
+      .split(/\s+/)
+      .filter((m) => m.length > 2 && !MOTS_VIDES.has(m));
+
+    if (mots.length === 0) return [];
+
+    // Requête OU (au moins un mot présent) plutôt que ET (tous les mots requis) —
+    // une question posée en langage naturel contient rarement exactement le même
+    // vocabulaire que la documentation, donc un ET strict rate presque tout.
+    const requeteOu = mots.join(" | ");
+
     const resultat = await query(
-      `select titre, contenu, ts_rank(tsv, plainto_tsquery('french', $1)) as rang
+      `select titre, contenu, ts_rank(tsv, to_tsquery('french', $1)) as rang
        from documents
-       where tsv @@ plainto_tsquery('french', $1)
+       where tsv @@ to_tsquery('french', $1)
          and (culture = $2 or culture is null)
        order by rang desc
        limit 3`,
-      [question, culture]
+      [requeteOu, culture]
     );
     return resultat.rows;
   } catch (err) {
