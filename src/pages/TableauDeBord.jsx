@@ -379,127 +379,6 @@ function SectionChatbot() {
   );
 }
 
-// ==============================================================
-// Section — Assistant IA (Groq/Llama, avec contexte météo en direct)
-// ==============================================================
-
-function SectionAssistantIA() {
-  const { appeler } = useApi();
-  const [culture, setCulture] = useState("mais");
-  const [question, setQuestion] = useState("");
-  const [coords, setCoords] = useState(null);
-  const [statutPosition, setStatutPosition] = useState("");
-  const [historique, setHistorique] = useState([]);
-  const [envoi, setEnvoi] = useState(false);
-
-  const utiliserMaPosition = () => {
-    if (!navigator.geolocation) {
-      setStatutPosition("Géolocalisation non disponible sur cet appareil.");
-      return;
-    }
-    setStatutPosition("Localisation en cours...");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setStatutPosition("Position obtenue — la météo locale sera prise en compte.");
-      },
-      () => {
-        setStatutPosition("Position refusée ou indisponible — l'assistant répondra sans contexte météo.");
-      }
-    );
-  };
-
-  const poser = async (e) => {
-    e.preventDefault();
-    const q = nettoyer(question);
-    if (!q) return;
-
-    setEnvoi(true);
-    setQuestion("");
-    try {
-      const donnees = await appeler("/api/assistant", {
-        method: "POST",
-        body: JSON.stringify({
-          question: q,
-          culture,
-          latitude: coords?.latitude,
-          longitude: coords?.longitude,
-        }),
-      });
-      setHistorique((h) => [...h, { question: q, reponse: donnees.reponse }]);
-    } catch (e) {
-      setHistorique((h) => [...h, { question: q, reponse: `Erreur : ${e.message}` }]);
-    } finally {
-      setEnvoi(false);
-    }
-  };
-
-  return (
-    <div className="bg-[#FBF7EE] border border-[#D9C9A8] rounded-2xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-serif text-lg">Assistant IA (avec météo en direct)</h3>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-[#7A6B4F]">Groq / Llama</span>
-      </div>
-
-      <div className="flex flex-wrap gap-3 mb-4">
-        <select
-          value={culture}
-          onChange={(e) => setCulture(e.target.value)}
-          className="bg-transparent border border-[#D9C9A8] rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-[#2E6B8A]"
-        >
-          {CULTURES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={utiliserMaPosition}
-          className="font-mono text-xs uppercase tracking-widest border border-[#D9C9A8] px-3 py-2 rounded-sm hover:border-[#2E6B8A] transition-colors"
-        >
-          📍 Utiliser ma position
-        </button>
-      </div>
-
-      {statutPosition && <p className="text-xs text-[#7A6B4F] mb-3">{statutPosition}</p>}
-
-      <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-        {historique.map((h, i) => (
-          <div key={i} className="text-sm">
-            <p className="font-medium">{h.question}</p>
-            <p className="text-[#4A4033] whitespace-pre-line">{h.reponse}</p>
-          </div>
-        ))}
-        {historique.length === 0 && (
-          <p className="text-sm text-[#7A6B4F]">
-            Posez une question ouverte sur la culture choisie — l'assistant peut tenir compte de la météo si vous partagez votre position.
-          </p>
-        )}
-      </div>
-
-      <form onSubmit={poser} className="flex gap-2">
-        <input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Votre question..."
-          className="flex-1 bg-transparent border border-[#D9C9A8] rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-[#2E6B8A]"
-        />
-        <button
-          type="submit"
-          disabled={envoi}
-          className="font-mono text-xs uppercase tracking-widest bg-[#B8542D] text-[#F2EBDD] px-4 py-2 rounded-sm hover:bg-[#A34823] transition-colors disabled:opacity-60"
-        >
-          {envoi ? "Réflexion..." : "Envoyer"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
 export default function TableauDeBord() {
   const { utilisateur } = useAuth();
 
@@ -517,7 +396,6 @@ export default function TableauDeBord() {
         <SectionDetectionIA />
         <SectionChatbot />
       </div>
-      <SectionAssistantIA />
     </section>
   );
 }
