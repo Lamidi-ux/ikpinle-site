@@ -36,6 +36,7 @@ function Navbar() {
             <>
               <span className="w-px h-4 bg-[#D9C9A8]" />
               <NavLink to="/tableau-de-bord" className={lienClasse}>Tableau de bord</NavLink>
+              <NavLink to="/assistant" className={lienClasse}>Assistant</NavLink>
               <NavLink to="/videos" className={lienClasse}>Vidéos</NavLink>
               <NavLink to="/messages" className={lienClasse}>Messages</NavLink>
             </>
@@ -79,6 +80,7 @@ function Navbar() {
             <>
               <div className="border-t border-[#D9C9A8] pt-4" />
               <NavLink to="/tableau-de-bord" className={lienClasse} onClick={() => setOuvert(false)}>Tableau de bord</NavLink>
+              <NavLink to="/assistant" className={lienClasse} onClick={() => setOuvert(false)}>Assistant</NavLink>
               <NavLink to="/videos" className={lienClasse} onClick={() => setOuvert(false)}>Vidéos</NavLink>
               <NavLink to="/messages" className={lienClasse} onClick={() => setOuvert(false)}>Messages</NavLink>
               <button onClick={seDeconnecter} className="text-left">Déconnexion</button>
