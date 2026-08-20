@@ -379,6 +379,88 @@ function SectionChatbot() {
   );
 }
 
+// ==============================================================
+// Section — Import météo (admin uniquement)
+// ==============================================================
+
+function SectionImportMeteo() {
+  const { appeler } = useApi();
+  const [commune, setCommune] = useState("");
+  const [annee, setAnnee] = useState(String(new Date().getFullYear()));
+  const [chargement, setChargement] = useState(false);
+  const [resultat, setResultat] = useState(null);
+  const [erreur, setErreur] = useState("");
+
+  const lancerImport = async (e) => {
+    e.preventDefault();
+    const communeNettoyee = nettoyer(commune);
+    if (!communeNettoyee) {
+      setErreur("Merci de renseigner une commune.");
+      return;
+    }
+
+    setChargement(true);
+    setErreur("");
+    setResultat(null);
+    try {
+      const donnees = await appeler("/api/meteo", {
+        method: "POST",
+        body: JSON.stringify({ commune: communeNettoyee, annee: Number(annee) }),
+      });
+      setResultat(donnees);
+    } catch (e) {
+      setErreur(e.message);
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#FBF7EE] border border-[#D9C9A8] rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-serif text-lg">Import météo (NASA POWER)</h3>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-[#B8542D]">Admin</span>
+      </div>
+      <p className="text-sm text-[#7A6B4F] mb-4">
+        Récupère l'historique de pluviométrie d'une commune et l'enregistre pour permettre
+        la détection du début de saison. À faire une fois par commune (les nouvelles années
+        peuvent être réimportées pour mettre à jour les données).
+      </p>
+
+      <form onSubmit={lancerImport} className="flex flex-wrap gap-3 mb-4">
+        <input
+          placeholder="Commune (ex : Cotonou)"
+          required
+          value={commune}
+          onChange={(e) => setCommune(e.target.value)}
+          className="flex-1 min-w-[140px] bg-transparent border border-[#D9C9A8] rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-[#2E6B8A]"
+        />
+        <input
+          type="number"
+          value={annee}
+          onChange={(e) => setAnnee(e.target.value)}
+          className="w-24 bg-transparent border border-[#D9C9A8] rounded-sm px-3 py-2 text-sm focus:outline-none focus:border-[#2E6B8A]"
+        />
+        <button
+          type="submit"
+          disabled={chargement}
+          className="font-mono text-xs uppercase tracking-widest bg-[#2F4A3C] text-[#F2EBDD] px-4 py-2 rounded-sm hover:bg-[#25392F] transition-colors disabled:opacity-60"
+        >
+          {chargement ? "Import en cours..." : "Importer"}
+        </button>
+      </form>
+
+      {erreur && <p className="text-sm text-[#B8542D] mb-2">{erreur}</p>}
+
+      {resultat && (
+        <p className="text-sm text-[#2F4A3C] bg-[#2F4A3C1A] border border-[#2F4A3C33] rounded-sm px-3 py-2">
+          ✅ {resultat.message} — {resultat.jours} jours importés pour {resultat.annee}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function TableauDeBord() {
   const { utilisateur } = useAuth();
 
@@ -396,6 +478,7 @@ export default function TableauDeBord() {
         <SectionDetectionIA />
         <SectionChatbot />
       </div>
+      {utilisateur?.role === "admin" && <SectionImportMeteo />}
     </section>
   );
 }
