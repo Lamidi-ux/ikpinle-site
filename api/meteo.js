@@ -134,23 +134,41 @@ async function importerDonneesNASA(commune, annee) {
     throw new Error("Format de données NASA POWER inattendu");
   }
 
-  let compteur = 0;
+  // Prépare toutes les lignes valides d'abord, sans toucher la base
+  const lignes = [];
   for (const [dateStr, pluie] of Object.entries(pluies)) {
     const pluieMm = parseFloat(pluie);
     if (!Number.isNaN(pluieMm) && pluieMm >= 0) {
       const dateFormatee = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
-      await query(
-        `insert into meteo_historique (commune, date, pluie_mm, source)
-         values ($1, $2, $3, 'nasa_power')
-         on conflict (commune, date)
-         do update set pluie_mm = excluded.pluie_mm, source = 'nasa_power'`,
-        [commune, dateFormatee, pluieMm]
-      );
-      compteur++;
+      lignes.push({ date: dateFormatee, pluie_mm: pluieMm });
     }
   }
 
-  return { success: true, jours: compteur };
+  // Insertion groupée par lots — une seule requête SQL pour ~100 jours au lieu
+  // d'une requête par jour (365 requêtes séparées dépassaient largement le
+  // temps limite d'une fonction serverless Vercel, d'où le FUNCTION_INVOCATION_TIMEOUT).
+  const TAILLE_LOT = 100;
+  for (let i = 0; i < lignes.length; i += TAILLE_LOT) {
+    const lot = lignes.slice(i, i + TAILLE_LOT);
+
+    const valeurs = [];
+    const params = [];
+    lot.forEach((ligne, idx) => {
+      const base = idx * 3;
+      valeurs.push(`($${base + 1}, $${base + 2}, $${base + 3}, 'nasa_power')`);
+      params.push(commune, ligne.date, ligne.pluie_mm);
+    });
+
+    await query(
+      `insert into meteo_historique (commune, date, pluie_mm, source)
+       values ${valeurs.join(", ")}
+       on conflict (commune, date)
+       do update set pluie_mm = excluded.pluie_mm, source = 'nasa_power'`,
+      params
+    );
+  }
+
+  return { success: true, jours: lignes.length };
 }
 
 async function gererImportMeteo(req, res, utilisateur) {
